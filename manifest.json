@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "codytolene.b33k33p3r",
+  "name": "B33K33P3R",
+  "version": "0.1.0",
+  "author": "Cody Tolene",
+  "license": "MIT",
+  "description": "Watch your B33K33P3R colony from the bar. Start a task, answer a bee, pause or stop, without opening the app.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {
+    "barWidget": "Widget.qml"
+  },
+  "barWidget": {
+    "displayName": "B33K33P3R",
+    "description": "One bar icon and one panel for the B33K33P3R desktop app: what the colony is doing, who's asking you something, and a box to send it work.",
+    "category": "AI",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

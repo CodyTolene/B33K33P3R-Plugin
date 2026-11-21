@@ -1,1 +1,77 @@
-# B33K33P3R-Plugin
+# B33K33P3R for Omarchy
+
+A bar widget for [B33K33P3R](https://b33k33p3r.com), the desktop app that puts a colony of AI coding bees to work on a task.
+
+I wanted to keep an eye on a running task without leaving the app open on a workspace. This puts a honeycomb in the Omarchy bar and a small panel behind it.
+
+## What it does
+
+- Shows what the colony is doing: standing by, working, paused, or waiting on you.
+- Puts a dot on the bar icon when a bee has a question.
+- Lets you start a task, answer a question, or send the Queen a message from the panel.
+- Pause, resume and stop.
+- Opens the app, or brings its window forward if it's already running.
+
+The widget doesn't run anything. The app does all the work and the widget talks to it, so your plan, providers and settings are whatever the app says they are.
+
+## What you need
+
+- Omarchy with the Quickshell shell (the one with `omarchy plugin`).
+- B33K33P3R for Linux, a version with the bar widget socket. Get it from [b33k33p3r.com](https://b33k33p3r.com).
+
+## Install
+
+```bash
+omarchy plugin add https://github.com/CodyTolene/B33K33P3R-Plugin.git --enable
+```
+
+Omarchy warns you that plugins run unsandboxed inside the shell. That's true of this one too, so have a read through the code first. It's three small QML files.
+
+The widget lands on the right side of the bar. Move it with `omarchy bar move codytolene.b33k33p3r`.
+
+To update or remove it:
+
+```bash
+omarchy plugin update codytolene.b33k33p3r
+omarchy plugin remove codytolene.b33k33p3r
+```
+
+## Using it
+
+- Left click the honeycomb to open the panel.
+- Right click it to open the app.
+- Type in the box and press Enter. With nothing running that starts a task. While the colony is working it goes to the Queen, and when a bee is waiting it's your answer.
+- Esc closes the panel.
+
+A task started from the panel uses the crew and folders you last picked in the app. If you want a different crew or project folder, set it there first.
+
+To toggle the panel from a keybinding:
+
+```bash
+omarchy-shell codytolene.b33k33p3r toggle
+```
+
+## How it talks to the app
+
+While it's running, B33K33P3R listens on a Unix socket at `$XDG_RUNTIME_DIR/b33k33p3r/hive.sock`. Only your user can open it. The app pushes a line of JSON whenever its status changes, and the widget sends a line of JSON to ask for something:
+
+```json
+{"do": "send", "text": "Fix the failing test"}
+```
+
+The actions are `status`, `send`, `pause`, `stop` and `show`. Nothing leaves your computer, and the widget makes no network requests.
+
+If the app isn't running the icon fades and the panel offers to open it. The widget starts the app with `gtk-launch local.omarchy.B33K33P3R`, which is the desktop entry the Linux installer adds.
+
+Set `B33K33P3R_HIVE_SOCKET` if you need the socket somewhere else. The app and the widget both read it.
+
+## Files
+
+- `manifest.json` tells Omarchy what this is.
+- `Widget.qml` is the bar icon and the panel.
+- `Hive.qml` is the socket connection.
+- `HiveIcon.qml` draws the honeycomb.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
