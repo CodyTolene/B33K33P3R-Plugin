@@ -20,19 +20,26 @@ Item {
   property bool online: false
   property var status: ({})
   property string lastError: ""
+  // Connects refused in a row. A socket file nobody answers on is left over
+  // from an app that didn't close cleanly, so ask it less often.
+  property int refusals: 0
 
   readonly property string phase: online ? String(status.state || "standby") : "offline"
   readonly property bool busy: online && status.busy === true
   readonly property bool waiting: phase === "waiting"
+  readonly property bool running: phase === "running"
   readonly property bool pausable: busy && (phase === "running" || phase === "pausing" || phase === "paused")
   readonly property bool resumes: phase === "paused" || phase === "pausing"
   readonly property bool stoppable: busy && phase !== "stopping"
   readonly property string bee: online ? String(status.bee || "") : ""
   readonly property int turns: online ? Number(status.turns || 0) : 0
+  readonly property int turnBudget: online ? Number(status.turn_budget || 0) : 0
   readonly property string prompt: online ? String(status.prompt || "") : ""
   readonly property string question: online ? String(status.question || "") : ""
   readonly property string questionFrom: online ? String(status.question_from || "") : ""
   readonly property string result: online ? String(status.result || "") : ""
+  // Older apps don't say, and that reads as subscribed.
+  readonly property bool freePlan: online && status.subscribed === false
 
   function request(action, text) {
     lastError = ""
@@ -83,17 +90,32 @@ Item {
       onRead: function(line) { root.receive(line) }
     }
     onConnectedChanged: {
-      if (connected) root.request("status")
-      else root.reset()
+      if (connected) {
+        root.refusals = 0
+        root.request("status")
+      } else {
+        root.reset()
+      }
+    }
+    onError: root.refusals++
+  }
+
+  // The shell logs every connect that fails, and the app is often closed, so
+  // only knock once the socket file is there.
+  Process {
+    id: probe
+    command: ["test", "-S", root.socketPath]
+    onExited: function(code) {
+      if (code === 0) socket.connected = true
+      else root.refusals = 0
     }
   }
 
-  // The app comes and goes. Keep knocking until it answers.
   Timer {
-    interval: 3000
+    interval: root.refusals >= 2 ? 30000 : 3000
     repeat: true
     triggeredOnStart: true
     running: root.socketPath !== "" && !socket.connected
-    onTriggered: socket.connected = true
+    onTriggered: if (!probe.running) probe.running = true
   }
 }
