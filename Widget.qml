@@ -59,12 +59,7 @@ Panel {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
-  onOpenedChanged: if (opened) {
-    hive.lastError = ""
-    Qt.callLater(function() {
-      if (panel.loadedContent && panel.loadedContent.input) panel.loadedContent.input.forceActiveFocus()
-    })
-  }
+  onOpenedChanged: if (opened) hive.lastError = ""
 
   Hive {
     id: hive
@@ -100,7 +95,8 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened
-    focusTarget: panel.loadedContent
+    // The text box takes the keys when it's there, or the panel does.
+    focusTarget: panel.loadedContent && hive.online ? panel.loadedContent.input : panel.loadedContent
     contentWidth: panel.fittedContentWidth(Style.space(360))
     contentHeight: panel.fittedContentHeight(panel.loadedContentHeight, Style.space(560))
 
@@ -109,7 +105,15 @@ Panel {
       property alias input: input
       implicitHeight: column.implicitHeight
       anchors.fill: parent
+      // Let the text box have every key, or j, k, x, space and Enter are lost.
+      blocked: input.activeFocus
       onCloseRequested: root.close()
+      // Only reached with the app closed, since the text box has the keys
+      // otherwise. Enter opens it.
+      onActivateRequested: {
+        hive.openApp()
+        root.close()
+      }
       onTabRequested: function(direction) { root.switchPanel(direction) }
 
       Column {
@@ -268,6 +272,8 @@ Panel {
           foreground: root.foreground
           onAccepted: root.submit(input)
           Keys.onEscapePressed: root.close()
+          // The app came up while the panel was open.
+          onVisibleChanged: if (visible && root.opened) forceActiveFocus()
         }
 
         Row {
