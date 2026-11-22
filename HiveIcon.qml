@@ -14,6 +14,8 @@ Item {
   property color badgeColor: Commons.Color.urgent
   // A dot in the corner, for when a bee is waiting on an answer.
   property bool badge: false
+  // Rings the dot in the color behind the icon so it stands off the cell.
+  property color cutout: "transparent"
   property bool lit: true
   property bool pulsing: false
 
@@ -73,6 +75,8 @@ Item {
     height: width
     radius: width / 2
     color: root.badgeColor
+    border.color: root.cutout
+    border.width: Math.max(1, root.iconSize * 0.08)
     anchors.right: parent.right
     anchors.top: parent.top
   }

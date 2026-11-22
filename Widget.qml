@@ -78,8 +78,9 @@ Panel {
           color: root.barIconColor
           badgeColor: root.urgent
           badge: hive.waiting
+          cutout: Commons.Color.bar.background
           lit: hive.online
-          pulsing: hive.running
+          pulsing: hive.running || hive.waiting
         }
       }
     }
@@ -135,8 +136,9 @@ Panel {
               color: root.foreground
               badgeColor: root.urgent
               badge: hive.waiting
+              cutout: Commons.Color.popups.background
               lit: hive.online
-              pulsing: hive.running
+              pulsing: hive.running || hive.waiting
             }
           }
         }
