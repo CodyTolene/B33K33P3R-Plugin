@@ -4,6 +4,10 @@ A bar widget for [B33K33P3R](https://b33k33p3r.com), the desktop app that puts a
 
 I wanted to keep an eye on a running task without leaving the app open on a workspace. This puts a honeycomb in the Omarchy bar and a small panel behind it.
 
+<p align="center">
+  <img src="preview.png" alt="The B33K33P3R panel open from the Omarchy bar, showing a running task" width="450">
+</p>
+
 ## What it does
 
 - Shows what the colony is doing: standing by, working, paused, or waiting on you.
@@ -76,6 +80,7 @@ Set `B33K33P3R_HIVE_SOCKET` if you need the socket somewhere else. The app and t
 - `Hive.qml` is the socket connection.
 - `HiveIcon.qml` draws the hive cell icon.
 - `MissionProgress.qml` is the turns and progress strip.
+- `preview.png` is the screenshot shown here and on the plugin marketplace.
 
 ## License
 
