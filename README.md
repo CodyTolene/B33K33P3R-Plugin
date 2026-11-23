@@ -20,6 +20,7 @@ The widget doesn't run anything. The app does all the work and the widget talks 
 
 - Omarchy with the Quickshell shell (the one with `omarchy plugin`).
 - B33K33P3R for Linux, a version with the bar widget socket. Get it from [b33k33p3r.com](https://b33k33p3r.com).
+- `hyprctl` and `jq` to float the app's window when the widget opens it. Omarchy ships both. Without them the window just opens tiled.
 
 ## Install
 
@@ -64,7 +65,7 @@ While it's running, B33K33P3R listens on a Unix socket at `$XDG_RUNTIME_DIR/b33k
 
 The actions are `status`, `send`, `pause`, `stop` and `show`. Nothing leaves your computer, and the widget makes no network requests.
 
-If the app isn't running the icon fades to an empty cell and the panel offers to open it. The widget checks for the socket every few seconds and only connects once it's there, so it stays quiet in your logs while the app is closed. The widget starts the app with `gtk-launch local.omarchy.B33K33P3R`, which is the desktop entry the Linux installer adds. On Hyprland, opening the app from the widget floats its window at the app's native size (888×1000), centred, instead of tiling it across the workspace. On a screen too short for that it takes all the height the bar and gaps leave and scales the width to keep the same shape. A window you've already floated keeps its size.
+If the app isn't running the icon fades to an empty cell and the panel offers to open it. The widget checks for the socket every few seconds and only connects once it's there, so it stays quiet in your logs while the app is closed. The widget starts the app with `gtk-launch local.omarchy.B33K33P3R`, which is the desktop entry the Linux installer adds. On Hyprland, opening the app from the widget floats its window at the app's native size (888×1000), centred, instead of tiling it across the workspace. On a screen too short for that it takes all the height the bar and gaps leave and scales the width to keep the same shape. A window you've already floated keeps its size. This only moves and sizes the window while it's open, and doesn't touch your Hyprland config. Each time it runs it adds a few lines to `$XDG_RUNTIME_DIR/b33k33p3r-float.log`, which is the only file the widget writes and is cleared when you reboot.
 
 Set `B33K33P3R_HIVE_SOCKET` if you need the socket somewhere else. The app and the widget both read it.
 

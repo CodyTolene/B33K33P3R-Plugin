@@ -71,7 +71,7 @@ Item {
   readonly property string floatScript: `
     class="$1"; width="$2"; height="$3"
     exec >>"\${XDG_RUNTIME_DIR:-/tmp}/b33k33p3r-float.log" 2>&1
-    echo "$(date +%T.%N) start PATH=$PATH"
+    echo "$(date +%T.%N) start"
     command -v hyprctl >/dev/null && command -v jq >/dev/null || { echo "missing hyprctl/jq"; exit 0; }
     for _ in $(seq 50); do
       read -r address floating < <(hyprctl clients -j 2>/dev/null |
