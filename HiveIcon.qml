@@ -1,9 +1,11 @@
 import QtQuick
+import QtQuick.Shapes
 import qs.Commons
 import qs.Commons as Commons
 
-// A honeycomb cell. Three bars turned 60 degrees apart overlap into a hexagon,
-// which stays sharp at bar size where a tiny SVG wouldn't.
+// A hive cell like the ones on the app's Hive Map: a flat-topped hexagon
+// outline with a smaller cell inside. The inner cell is lit while the app is
+// up and breathes while the colony works.
 Item {
   id: root
 
@@ -12,22 +14,58 @@ Item {
   property color badgeColor: Commons.Color.urgent
   // A dot in the corner, for when a bee is waiting on an answer.
   property bool badge: false
+  // Rings the dot in the color behind the icon so it stands off the cell.
+  property color cutout: "transparent"
+  property bool lit: true
+  property bool pulsing: false
 
   width: iconSize
   height: iconSize
   implicitWidth: iconSize
   implicitHeight: iconSize
 
-  Repeater {
-    model: [0, 60, -60]
+  // Corners of a flat-topped hexagon of radius r around the icon's center.
+  function corners(r) {
+    var points = []
+    for (var step = 0; step < 6; step++) {
+      var angle = Math.PI / 3 * step
+      points.push(Qt.point(iconSize / 2 + Math.cos(angle) * r, iconSize / 2 + Math.sin(angle) * r))
+    }
+    points.push(points[0])
+    return points
+  }
 
-    Rectangle {
-      anchors.centerIn: parent
-      width: root.iconSize * 0.866
-      height: root.iconSize * 0.5
-      rotation: modelData
-      color: root.color
-      antialiasing: true
+  Shape {
+    anchors.fill: parent
+    preferredRendererType: Shape.CurveRenderer
+
+    ShapePath {
+      strokeColor: root.color
+      strokeWidth: Math.max(1.5, root.iconSize * 0.11)
+      fillColor: "transparent"
+      joinStyle: ShapePath.MiterJoin
+      PathPolyline { path: root.corners(root.iconSize * 0.44) }
+    }
+  }
+
+  Shape {
+    id: core
+    anchors.fill: parent
+    visible: root.lit
+    preferredRendererType: Shape.CurveRenderer
+
+    ShapePath {
+      strokeColor: "transparent"
+      fillColor: root.color
+      PathPolyline { path: root.corners(root.iconSize * 0.22) }
+    }
+
+    SequentialAnimation on opacity {
+      running: root.pulsing
+      loops: Animation.Infinite
+      onRunningChanged: if (!running) core.opacity = 1
+      NumberAnimation { to: 0.25; duration: 700; easing.type: Easing.InOutQuad }
+      NumberAnimation { to: 1; duration: 700; easing.type: Easing.InOutQuad }
     }
   }
 
@@ -37,6 +75,8 @@ Item {
     height: width
     radius: width / 2
     color: root.badgeColor
+    border.color: root.cutout
+    border.width: Math.max(1, root.iconSize * 0.08)
     anchors.right: parent.right
     anchors.top: parent.top
   }

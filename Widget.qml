@@ -15,25 +15,26 @@ Panel {
   // Faded while the app is closed, so the bar shows it at a glance.
   readonly property color barIconColor: hive.online ? barForeground : Qt.darker(barForeground, 1.55)
 
+  // The app's own words for each state.
   readonly property var phaseLabels: ({
-    "offline": "Not running",
-    "standby": "Standing by",
-    "running": "Working",
-    "pausing": "Pausing after this turn",
+    "offline": "Offline",
+    "standby": "Standby",
+    "running": "Running",
+    "pausing": "Pausing",
     "paused": "Paused",
     "waiting": "Waiting on you",
     "stopping": "Stopping",
     "stopped": "Stopped",
-    "completed": "Done",
+    "completed": "Complete",
     "failed": "Failed"
   })
   readonly property string phaseText: phaseLabels[hive.phase] || hive.phase
 
   readonly property string metaText: {
-    if (!hive.online) return "Open the app to put the colony to work."
-    if (!hive.busy) return phaseText
-    var turn = hive.turns > 0 ? ", turn " + hive.turns : ""
-    return hive.bee !== "" ? hive.bee + turn : phaseText + turn
+    if (!hive.online) return "Not running"
+    if (!hive.busy) return hive.prompt !== "" ? "Last mission" : "Ready for a mission"
+    if (hive.bee !== "") return hive.bee
+    return "Queen / Command"
   }
 
   readonly property string inputHint: {
@@ -58,11 +59,7 @@ Panel {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
-  onOpenedChanged: if (opened) {
-    Qt.callLater(function() {
-      if (panel.loadedContent && panel.loadedContent.input) panel.loadedContent.input.forceActiveFocus()
-    })
-  }
+  onOpenedChanged: if (opened) hive.lastError = ""
 
   Hive {
     id: hive
@@ -81,6 +78,9 @@ Panel {
           color: root.barIconColor
           badgeColor: root.urgent
           badge: hive.waiting
+          cutout: Commons.Color.bar.background
+          lit: hive.online
+          pulsing: hive.running || hive.waiting
         }
       }
     }
@@ -96,16 +96,25 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened
-    focusTarget: panel.loadedContent
+    // The text box takes the keys when it's there, or the panel does.
+    focusTarget: panel.loadedContent && hive.online ? panel.loadedContent.input : panel.loadedContent
     contentWidth: panel.fittedContentWidth(Style.space(360))
-    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight, Style.space(520))
+    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight, Style.space(560))
 
     content: PanelKeyCatcher {
       id: keyCatcher
       property alias input: input
       implicitHeight: column.implicitHeight
       anchors.fill: parent
+      // Let the text box have every key, or j, k, x, space and Enter are lost.
+      blocked: input.activeFocus
       onCloseRequested: root.close()
+      // Only reached with the app closed, since the text box has the keys
+      // otherwise. Enter opens it.
+      onActivateRequested: {
+        hive.openApp()
+        root.close()
+      }
       onTabRequested: function(direction) { root.switchPanel(direction) }
 
       Column {
@@ -117,7 +126,7 @@ Panel {
           width: parent.width
           title: "B33K33P3R"
           meta: root.metaText
-          detail: hive.busy ? root.phaseText : ""
+          detail: hive.online ? root.phaseText.toUpperCase() : ""
           foreground: root.foreground
           fontFamily: root.fontFamily
           iconOpacity: hive.online ? 1.0 : 0.5
@@ -127,8 +136,33 @@ Panel {
               color: root.foreground
               badgeColor: root.urgent
               badge: hive.waiting
+              cutout: Commons.Color.popups.background
+              lit: hive.online
+              pulsing: hive.running || hive.waiting
             }
           }
+        }
+
+        Text {
+          textFormat: Text.PlainText
+          visible: !hive.online
+          width: parent.width
+          text: "Open the app to bring the hive online."
+          color: root.dim
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.body
+          wrapMode: Text.WordWrap
+        }
+
+        Text {
+          textFormat: Text.PlainText
+          visible: hive.freePlan
+          width: parent.width
+          text: "You're on the free plan. Subscribe in the app to unlock every bee."
+          color: root.dim
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.bodySmall
+          wrapMode: Text.WordWrap
         }
 
         Text {
@@ -148,8 +182,9 @@ Panel {
           spacing: Style.space(6)
 
           PanelSectionHeader {
-            text: hive.questionFrom !== "" ? hive.questionFrom + " asks" : "A bee asks"
+            text: (hive.questionFrom !== "" ? hive.questionFrom : "A bee").toUpperCase() + " ASKS"
             foreground: root.foreground
+            font.letterSpacing: 1.2
           }
 
           Text {
@@ -171,8 +206,9 @@ Panel {
           spacing: Style.space(6)
 
           PanelSectionHeader {
-            text: hive.busy ? "Current task" : "Last task"
+            text: "MISSION BRIEF"
             foreground: root.foreground
+            font.letterSpacing: 1.2
           }
 
           Text {
@@ -186,19 +222,43 @@ Panel {
             maximumLineCount: 3
             elide: Text.ElideRight
           }
+        }
+
+        Column {
+          visible: hive.online && !hive.busy && hive.result !== ""
+          width: parent.width
+          spacing: Style.space(6)
+
+          PanelSectionHeader {
+            text: hive.phase === "completed" ? "MISSION COMPLETE"
+              : hive.phase === "failed" ? "MISSION FAILED"
+              : hive.phase === "stopped" ? "MISSION STOPPED"
+              : "MISSION REPORT"
+            foreground: root.foreground
+            font.letterSpacing: 1.2
+          }
 
           Text {
             textFormat: Text.PlainText
-            visible: !hive.busy && hive.result !== ""
             width: parent.width
             text: hive.result
-            color: root.foreground
+            color: hive.phase === "failed" ? root.urgent : root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.body
             wrapMode: Text.WordWrap
             maximumLineCount: 6
             elide: Text.ElideRight
           }
+        }
+
+        MissionProgress {
+          visible: hive.online && (hive.busy || hive.prompt !== "")
+          width: parent.width
+          turns: hive.turns
+          turnBudget: hive.turnBudget
+          phase: hive.phase
+          foreground: root.foreground
+          fontFamily: root.fontFamily
         }
 
         PanelSeparator {
@@ -214,6 +274,8 @@ Panel {
           foreground: root.foreground
           onAccepted: root.submit(input)
           Keys.onEscapePressed: root.close()
+          // The app came up while the panel was open.
+          onVisibleChanged: if (visible && root.opened) forceActiveFocus()
         }
 
         Row {
